@@ -52,9 +52,17 @@ jobs:
         run:  ~/snowflake/snowsql -v
       - name: Execute sql files against Snowflake
         run: |
-          echo "Creating SNOWFLAKE_PRIVATE_KEY_PATH variable"
-          export SNOWFLAKE_PRIVATE_KEY_PATH=~/.ssh/id_rsa-snowflake
-          echo "Step 3: Executing snowsql"
-          # Give permission to execute bash script
-          chmod u+x $GITHUB_WORKSPACE/V1.1.2__create_and_alter_tables.sql
-          $GITHUB_WORKSPACE/V1.1.2__create_and_alter_tables.sql
+  echo "Creating SNOWFLAKE_PRIVATE_KEY_PATH variable"
+  export SNOWFLAKE_PRIVATE_KEY_PATH=~/.ssh/id_rsa-snowflake
+
+  echo "Step 3: Executing snowsql"
+
+  # Define the deploy folder containing SQL files
+  SQL_DEPLOY_FOLDER="$GITHUB_WORKSPACE/deploy"
+
+  # Loop through all .sql files in the deploy folder
+  for sql_file in $SQL_DEPLOY_FOLDER/*.sql; do
+    echo "Executing $sql_file"
+    # Execute the SQL file using snowsql
+    snowsql -a $SNOWSQL_ACCOUNT -u $SNOWSQL_USER -f "$sql_file"
+  done
