@@ -20,6 +20,9 @@ jobs:
       - name: Install schemachange
         run: pip install schemachange
 
+      - name: Set permissions for connections.toml
+        run: chmod 600 connections.toml
+
       - name: Deploy Schema Changes
         env:
           SNOWFLAKE_ACCOUNT: ${{ secrets.SNOWFLAKE_ACCOUNT }}
