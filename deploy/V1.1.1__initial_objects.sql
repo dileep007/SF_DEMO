@@ -48,5 +48,5 @@ INSERT INTO hrdata.departments VALUES
    ( 70 , 'Public Relations', 204, 2700),
    ( 80 , 'Sales', 145, 2500),
    ( 90 , 'Executive', 100, 1700),
-    ( 100 , 'Finance', 108, 1700)
-    ( 101 , 'TEST', 108, 1700) ;
+    ( 100 , 'Finance', 108, 1700);
+   
