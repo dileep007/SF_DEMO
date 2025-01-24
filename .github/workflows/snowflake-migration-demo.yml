@@ -31,11 +31,5 @@ jobs:
           SNOWFLAKE_SCHEMA: ${{ secrets.SNOWFLAKE_SCHEMA }}
         run: |
           schemachange deploy \
-            --snowflake-account $SNOWFLAKE_ACCOUNT \
-            --snowflake-user $SNOWFLAKE_USER \
-            --snowflake-password "$SNOWFLAKE_PASSWORD" \
-            --snowflake-role $SNOWFLAKE_ROLE \
-            --snowflake-warehouse $SNOWFLAKE_WAREHOUSE \
-            --snowflake-database $SNOWFLAKE_DATABASE \
-            --snowflake-schema $SNOWFLAKE_SCHEMA \
-            --root-folder ./path_to_changes
+      --connections-file-path ./connections.toml \
+      --root-folder ./path_to_changes
