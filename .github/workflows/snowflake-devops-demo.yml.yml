@@ -56,5 +56,5 @@ jobs:
           export SNOWFLAKE_PRIVATE_KEY_PATH=~/.ssh/id_rsa-snowflake
           echo "Step 3: Executing snowsql"
           # Give permission to execute bash script
-          chmod u+x $GITHUB_WORKSPACE/simple_integration.sh
-          $GITHUB_WORKSPACE/simple_integration.sh
+          chmod u+x $GITHUB_WORKSPACE/V1.1.2__create_and_alter_tables.sql
+          $GITHUB_WORKSPACE/V1.1.2__create_and_alter_tables.sql
