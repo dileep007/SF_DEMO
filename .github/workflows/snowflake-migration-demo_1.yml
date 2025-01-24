@@ -1,0 +1,67 @@
+name: snowflake-migration-demo_1
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'deploy/**'
+  workflow_dispatch:
+
+jobs:
+  deploy-snowflake-changes-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Checkout your repository
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      # Set up Python environment
+      - name: Use Python 3.8.x
+        uses: actions/setup-python@v2.2.1
+        with:
+          python-version: 3.8.x
+
+      # Install snowsql and dependencies
+      - name: Install snowsql and dependencies
+        run: |
+          echo "Installing snowsql and required Python packages..."
+          curl -o install-snowsql.sh https://s3.amazonaws.com/snowflake-client-artifacts/snowsql/linux/x86_64/snowsql-1.2.18-linux_x86_64.tar.gz
+          chmod +x install-snowsql.sh
+          ./install-snowsql.sh
+          pip install schemachange
+
+      # Clone the Snowflake database as Checkpoint
+      - name: Clone Snowflake Database as Checkpoint
+        run: |
+          echo "Cloning the database as checkpoint..."
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "CREATE DATABASE ${SF_DATABASE}_CLONE CLONE ${SF_DATABASE};"
+
+      # Run schema change using schemachange
+      - name: Run schemachange
+        env:
+          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+          SF_USERNAME: ${{ secrets.SF_USERNAME }}
+          SF_ROLE: ${{ secrets.SF_ROLE }}
+          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+          SF_DATABASE: ${{ secrets.SF_DATABASE }}_CLONE
+          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+        run: |
+          echo "Running schema changes..."
+          schemachange -f $GITHUB_WORKSPACE/deploy --connections-file-path $GITHUB_WORKSPACE/deploy/connections.toml --connection-name cicd -c $SF_DATABASE.SCHEMACHANGE.CHANGE_HISTORY --create-change-history-table
+
+      # Rollback in case of failure
+      - name: Rollback to original database
+        if: failure()
+        run: |
+          echo "Rolling back to the original database..."
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "USE DATABASE ${SF_DATABASE};"
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "DROP DATABASE ${SF_DATABASE}_CLONE;"
+
+      # Drop cloned database if schema change was successful
+      - name: Drop cloned database
+        if: success()
+        run: |
+          echo "Dropping the cloned database after successful schema change..."
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "DROP DATABASE ${SF_DATABASE}_CLONE;"
