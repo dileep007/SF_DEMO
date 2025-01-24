@@ -1,5 +1,5 @@
-# **devops-demo.yml.**
-name: snowflake-devops-demo
+# **snowflake-devops-demo.yml.**
+name: devops-demo
  
 # Environment variable created under github secrets. 
 env:
@@ -18,7 +18,7 @@ on:
     branches:
       - main
     paths:
-      - 'deploy/**'
+      - 'migrations/**'
  
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
