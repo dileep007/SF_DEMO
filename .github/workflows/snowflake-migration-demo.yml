@@ -25,10 +25,13 @@ jobs:
         with:
           python-version: 3.8.x
 
-      - name: Install dependencies
+      - name: Install snowsql and dependencies
         run: |
-          echo "Installing required Python packages..."
-          pip install snowsql schemachange
+          echo "Installing snowsql and required Python packages..."
+          curl -o snowsql-linux.tgz -L https://s3.amazonaws.com/snowflake-client-artifacts/snowsql/linux/x86_64/snowsql-1.2.18-linux_x86_64.tar.gz
+          tar -xvzf snowsql-linux.tgz
+          sudo mv snowsql /usr/local/bin/
+          pip install schemachange
 
       - name: Clone Snowflake Database to Checkpoint
         env:
