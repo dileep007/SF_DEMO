@@ -40,7 +40,7 @@ jobs:
         run: pip install snowflake-connector-python
 
       - name: Run Clone DB script via python
-        run: python $GITHUB_WORKSPACE/migrations/create_clone.py
+        run: python $GITHUB_WORKSPACE/deploy/clone.py
 
         
       - name: Run schemachange
@@ -61,4 +61,4 @@ jobs:
           
           
           echo "Step 2: Running schemachange"
-          schemachange -f $GITHUB_WORKSPACE/migrations --connections-file-path $GITHUB_WORKSPACE/deploy/connections.toml --connection-name cicdtest -c $SF_DATABASE.SCHEMACHANGE.CHANGE_HISTORY --create-change-history-table
+          schemachange -f $GITHUB_WORKSPACE/deploy --connections-file-path $GITHUB_WORKSPACE/deploy/connections.toml --connection-name cicdtest -c $SF_DATABASE.SCHEMACHANGE.CHANGE_HISTORY --create-change-history-table
