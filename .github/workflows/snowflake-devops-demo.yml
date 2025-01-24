@@ -31,7 +31,7 @@ jobs:
         run:  ~/snowflake/snowsql -v
 
       - name: Setup Snowsql config
-        run: cat $GITHUB_WORKSPACE/migrations/connection.txt>~/.snowsql/config 
+        run: cat $GITHUB_WORKSPACE/deploy/connection.txt>~/.snowsql/config 
 
       - name: Print config
         run: cat ~/.snowsql/config
