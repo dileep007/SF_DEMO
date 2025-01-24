@@ -1,14 +1,11 @@
 name: snowflake-migration-demo
 
-# Controls when the action will run.
 on:
   push:
     branches:
       - main
     paths:
       - 'deploy/**'
-
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 jobs:
@@ -16,77 +13,55 @@ jobs:
     runs-on: ubuntu-latest
 
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      # Checkout your repository
       - name: Checkout repository
         uses: actions/checkout@v2
 
+      # Set up Python environment
       - name: Use Python 3.8.x
         uses: actions/setup-python@v2.2.1
         with:
           python-version: 3.8.x
 
+      # Install snowsql and required Python packages
       - name: Install snowsql and dependencies
         run: |
           echo "Installing snowsql and required Python packages..."
-          curl -o snowsql-linux.tgz -L https://s3.amazonaws.com/snowflake-client-artifacts/snowsql/linux/x86_64/snowsql-1.2.18-linux_x86_64.tar.gz
-          tar -xvzf snowsql-linux.tgz
+          curl -LO https://s3.amazonaws.com/snowflake-client-artifacts/snowsql/linux/x86_64/snowsql-1.2.18-linux_x86_64.tar.gz
+          tar -xvzf snowsql-1.2.18-linux_x86_64.tar.gz
           sudo mv snowsql /usr/local/bin/
           pip install schemachange
 
-      - name: Clone Snowflake Database to Checkpoint
-        env:
-          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-          SF_USERNAME: ${{ secrets.SF_USERNAME }}
-          SF_ROLE: ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DATABASE }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
+      # Clone the Snowflake database as a checkpoint
+      - name: Clone Snowflake Database as Checkpoint
         run: |
-          echo "Cloning the database to checkpoint..."
-          snowsql -a $SF_ACCOUNT -u $SF_USERNAME -r $SF_ROLE -w $SF_WAREHOUSE -d $SF_DATABASE -p $SNOWFLAKE_PASSWORD -q "
-          CREATE OR REPLACE DATABASE ${SF_DATABASE}_CHECKPOINT CLONE ${SF_DATABASE};
-          "
+          echo "Cloning the database as checkpoint..."
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "CREATE DATABASE ${SF_DATABASE}_CLONE CLONE ${SF_DATABASE};"
 
-      - name: Run schemachange on the Checkpoint DB
+      # Run schema change using schemachange
+      - name: Run schemachange
         env:
           SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
           SF_USERNAME: ${{ secrets.SF_USERNAME }}
           SF_ROLE: ${{ secrets.SF_ROLE }}
           SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DATABASE }}_CHECKPOINT
+          SF_DATABASE: ${{ secrets.SF_DATABASE }}_CLONE
           SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
         run: |
-          echo "Running schema changes on the checkpoint DB..."
+          echo "Running schema changes..."
           schemachange -f $GITHUB_WORKSPACE/deploy --connections-file-path $GITHUB_WORKSPACE/deploy/connections.toml --connection-name cicd -c $SF_DATABASE.SCHEMACHANGE.CHANGE_HISTORY --create-change-history-table
 
-      - name: Rollback if schema change failed
+      # Check if schema change was successful, and if failed, roll back
+      - name: Rollback in case of failure
         if: failure()
-        env:
-          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-          SF_USERNAME: ${{ secrets.SF_USERNAME }}
-          SF_ROLE: ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DATABASE }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
         run: |
           echo "Rolling back to the original database..."
-          snowsql -a $SF_ACCOUNT -u $SF_USERNAME -r $SF_ROLE -w $SF_WAREHOUSE -d $SF_DATABASE -p $SNOWFLAKE_PASSWORD -q "
-          USE DATABASE ${SF_DATABASE};
-          DROP DATABASE IF EXISTS ${SF_DATABASE};
-          CREATE DATABASE ${SF_DATABASE} CLONE ${SF_DATABASE}_CHECKPOINT;
-          "
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "USE DATABASE ${SF_DATABASE};"
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "DROP DATABASE ${SF_DATABASE}_CLONE;"
 
-      - name: Drop Clone Database if Success
+      # Drop the cloned database if schema change was successful
+      - name: Drop cloned database
         if: success()
-        env:
-          SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
-          SF_USERNAME: ${{ secrets.SF_USERNAME }}
-          SF_ROLE: ${{ secrets.SF_ROLE }}
-          SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
-          SF_DATABASE: ${{ secrets.SF_DATABASE }}
-          SNOWFLAKE_PASSWORD: ${{ secrets.SF_PASSWORD }}
         run: |
-          echo "Dropping the checkpoint (clone) database..."
-          snowsql -a $SF_ACCOUNT -u $SF_USERNAME -r $SF_ROLE -w $SF_WAREHOUSE -d $SF_DATABASE -p $SNOWFLAKE_PASSWORD -q "
-          DROP DATABASE IF EXISTS ${SF_DATABASE}_CHECKPOINT;
-          "
+          echo "Dropping the cloned database after successful schema change..."
+          snowsql -a ${{ secrets.SF_ACCOUNT }} -u ${{ secrets.SF_USERNAME }} -p ${{ secrets.SF_PASSWORD }} -r ${{ secrets.SF_ROLE }} -w ${{ secrets.SF_WAREHOUSE }} -d ${{ secrets.SF_DATABASE }} -s ${{ secrets.SF_SCHEMA }} -q "DROP DATABASE ${SF_DATABASE}_CLONE;"
