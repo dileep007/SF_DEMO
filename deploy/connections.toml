@@ -1,0 +1,7 @@
+[cicd]
+account = "dj65498.central-india.azure"
+user = "admin"
+password = "Certi@1699"
+warehouse = "COMPUTE_WH"
+database = "EMP"
+schema = "HRDATA"
