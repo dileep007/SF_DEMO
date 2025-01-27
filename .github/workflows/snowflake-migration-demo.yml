@@ -98,7 +98,7 @@ jobs:
         try:
             cursor.execute(f'DROP DATABASE IF EXISTS {prod_db_name}')
             cursor.execute(f'CREATE OR REPLACE DATABASE {prod_db_name} CLONE {clone_db_name}')
-            print('Rollback completed successfully')
+            print('Rollback completed ')
         except Exception as e:
             print(f'Rollback failed: {e}')
             raise
