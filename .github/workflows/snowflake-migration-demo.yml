@@ -70,7 +70,7 @@ jobs:
       run: |
         schemachange deploy \
           --root-folder ./deploy \
-          --connections-file-path ./connections.toml \
+          --connections-file-path $GITHUB_WORKSPACE/connections.toml \
           --create-change-history-table
 
     - name: Rollback on Failure
