@@ -6,5 +6,5 @@ role = "ACCOUNTADMIN"
 warehouse = "COMPUTE_WH"
 database = "EMP"
 schema = "hrdata"  # Default schema
-
+change_history_table = "metadata.schemachange.CHANGE_HISTORY"
 
