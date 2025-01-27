@@ -71,6 +71,7 @@ jobs:
         schemachange deploy \
           --root-folder ./deploy \
           --connections-file-path $GITHUB_WORKSPACE/connections.toml \
+          --connection-name CICD \
           --create-change-history-table
 
     - name: Rollback on Failure
