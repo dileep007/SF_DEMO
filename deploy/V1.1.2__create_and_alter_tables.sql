@@ -1,4 +1,4 @@
-ALTER TABLE HRDATA.employees add column emp_status varchar(10);
+ALTER TABLE HRDATA.employees add column emp_status_1 varchar(10);
 
 CREATE TABLE hrdata.countries 
    ( country_id CHAR(2) NOT NULL 
@@ -13,6 +13,6 @@ CREATE TABLE hrdata.regions
    , PRIMARY KEY (region_id)
    );
 
-update HRDATA.employees SET emp_status = 'Active';
+update HRDATA.employees SET emp_status_1 = 'Active';
 
 CREATE VIEW hrdata.v_employees as select * from hrdata.employees;
