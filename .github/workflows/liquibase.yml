@@ -38,11 +38,10 @@ jobs:
         changeLogFile: changelog/db.changelog-master.xml
         EOF
        
-        # Verify properties
-        cat liquibase.properties | grep -v password
+      
 
     - name: Run Liquibase Status
-      run: ./liquibase status --verbose --log-level=debug
+      run: ./liquibase status -
 
     - name: Validate Liquibase Changelog
       run: ./liquibase validate
