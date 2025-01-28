@@ -48,4 +48,8 @@ jobs:
       run: ./liquibase validate
 
     - name: Apply Database Changes
-      run: ./liquibase update
+      run: |
+        ./liquibase update || {
+          echo "Update failed, performing rollback";
+          ./liquibase rollbackCount 1 --log-level=debug
+        }
