@@ -32,9 +32,9 @@ jobs:
       run: |
         cat > liquibase.properties << EOF
         driver: net.snowflake.client.jdbc.SnowflakeDriver
-        url: jdbc:snowflake://${{ secrets.SNOWFLAKE_ACCOUNT }}.snowflakecomputing.com/?db=${{ secrets.SNOWFLAKE_DATABASE }}&schema=${{ secrets.SNOWFLAKE_SCHEMA }}&warehouse=${{ secrets.SNOWFLAKE_WAREHOUSE }}
-        username: ${{ secrets.SNOWFLAKE_USER }}
-        password: ${{ secrets.SNOWFLAKE_PASSWORD }}
+        url: jdbc:snowflake://${{ secrets.SNOWFLAKE_ACCOUNT }}.snowflakecomputing.com/?db=${{ secrets.SF_DATABASE }}&schema=${{ secrets.SF_SCHEMA }}&warehouse=${{ secrets.SF_WAREHOUSE }}
+        username: ${{ secrets.SF_USERNAME }}
+        password: ${{ secrets.SF_PASSWORD }}
         changeLogFile: changelog/db.changelog-master.xml
         EOF
        
