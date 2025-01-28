@@ -1,0 +1,141 @@
+
+
+
+name: Snowflake Schema Change Workflow
+
+on:
+  push:
+    branches: [ main ]
+  workflow_dispatch:
+
+
+jobs:
+  schema-change:
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v3
+      with:
+        python-version: '3.9'
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install schemachange snowflake-connector-python
+
+    - name: Create DB Clone
+      env:
+        SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+        SF_USERNAME: ${{ secrets.SF_USERNAME }}
+        SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+        SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+        SF_DATABASE: ${{ secrets.SF_DATABASE }}
+      run: |
+        python << EOF
+        import snowflake.connector
+
+        conn = snowflake.connector.connect(
+            account='${{ secrets.SF_ACCOUNT }}',
+            user='${{ secrets.SF_USERNAME }}',
+            password='${{ secrets.SF_PASSWORD }}',
+            warehouse='${{ secrets.SF_WAREHOUSE }}',
+            database='${{ secrets.SF_DATABASE }}'
+        )
+
+        cursor = conn.cursor()
+        clone_db_name = '${{ secrets.SF_DATABASE }}_CLONE'
+       
+        try:
+            cursor.execute(f'CREATE OR REPLACE DATABASE {clone_db_name} CLONE {conn.database}')
+            print(f'Successfully created clone database: {clone_db_name}')
+        except Exception as e:
+            print(f'Error creating clone: {e}')
+            raise
+        finally:
+            cursor.close()
+            conn.close()
+        EOF
+
+    - name: Apply Schema Changes
+      env:
+        SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+        SF_USERNAME: ${{ secrets.SF_USERNAME }}
+        SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+        SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+        SF_DATABASE: ${{ secrets.SF_DATABASE }}
+        SF_ROLE: ${{ secrets.SF_ROLE }}
+      run: |
+        schemachange deploy \
+          --root-folder ./deploy \
+          --connections-file-path $GITHUB_WORKSPACE/connections.toml \
+          --connection-name CICD \
+          --create-change-history-table
+
+    - name: Rollback on Failure
+      if: failure()
+      env:
+        SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+        SF_USERNAME: ${{ secrets.SF_USERNAME }}
+        SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+        SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+        SF_DATABASE: ${{ secrets.SF_DATABASE }}
+      run: |
+        python << EOF
+        import snowflake.connector
+
+        conn = snowflake.connector.connect(
+            account='${{ secrets.SF_ACCOUNT }}',
+            user='${{ secrets.SF_USERNAME }}',
+            password='${{ secrets.SF_PASSWORD }}',
+            warehouse='${{ secrets.SF_WAREHOUSE }}'
+        )
+
+        cursor = conn.cursor()
+        clone_db_name = '${{ secrets.SF_DATABASE }}_CLONE'
+        prod_db_name = '${{ secrets.SF_DATABASE }}'
+       
+        try:
+            cursor.execute(f'DROP DATABASE IF EXISTS {prod_db_name}')
+            cursor.execute(f'CREATE OR REPLACE DATABASE {prod_db_name} CLONE {clone_db_name}')
+            print('Rollback completed ')
+        except Exception as e:
+            print(f'Rollback failed: {e}')
+            raise
+        finally:
+            cursor.close()
+            conn.close()
+        EOF
+
+    - name: Clean Up Clone Database
+      if: always()
+      env:
+        SF_ACCOUNT: ${{ secrets.SF_ACCOUNT }}
+        SF_USERNAME: ${{ secrets.SF_USERNAME }}
+        SF_PASSWORD: ${{ secrets.SF_PASSWORD }}
+        SF_WAREHOUSE: ${{ secrets.SF_WAREHOUSE }}
+      run: |
+        python << EOF
+        import snowflake.connector
+
+        conn = snowflake.connector.connect(
+            account='${{ secrets.SF_ACCOUNT }}',
+            user='${{ secrets.SF_USERNAME }}',
+            password='${{ secrets.SF_PASSWORD }}',
+            warehouse='${{ secrets.SF_WAREHOUSE }}'
+        )
+
+        cursor = conn.cursor()
+        clone_db_name = '${{ secrets.SF_DATABASE }}_CLONE'
+       
+        try:
+            cursor.execute(f'DROP DATABASE IF EXISTS {clone_db_name}')
+            print('Clone database deleted successfully')
+        except Exception as e:
+            print(f'Error deleting clone database: {e}')
+        finally:
+            cursor.close()
+            conn.close()
+        EOF

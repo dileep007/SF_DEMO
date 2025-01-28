@@ -1,0 +1,7 @@
+[cicd]
+account = "bc33357.ap-southeast-1"
+user = "admin"
+password = "Certi@1699"
+warehouse = "COMPUTE_WH"
+database = "EMP"
+schema = "HRDATA"

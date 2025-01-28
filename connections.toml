@@ -1,0 +1,10 @@
+[CICD]
+account = "bc33357.ap-southeast-1"
+user = "ADMIN"
+password = "Certi@1699"
+role = "ACCOUNTADMIN"
+warehouse = "COMPUTE_WH"
+database = "EMP"
+schema = "hrdata"  # Default schema
+change_history_table = "metadata.schemachange.CHANGE_HISTORY"
+

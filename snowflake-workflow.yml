@@ -1,0 +1,45 @@
+name: Snowflake DB Workflow
+
+on:
+  workflow_dispatch:
+
+jobs:
+  snowflake-job:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Set environment variables
+        run: |
+          export SNOWSQL_ACCOUNT="your_account"
+          export SNOWSQL_USER="your_user"
+          export SNOWSQL_ROLE="ACCOUNTADMIN"
+          export SNOWSQL_WAREHOUSE="COMPUTE_WH"
+          export ORIGINAL_DB="EMP"
+          export CLONED_DB="EMP_CLONE"
+          export SNOWSQL_PRIVATE_KEY_PATH="~/.ssh/id_rsa-snowflake"
+
+      - name: Clone the database
+        run: |
+          chmod +x ./scripts/clone_db.sh
+          ./scripts/clone_db.sh "$SNOWSQL_ACCOUNT" "$SNOWSQL_USER" "$SNOWSQL_ROLE" "$SNOWSQL_WAREHOUSE" "$ORIGINAL_DB" "$CLONED_DB" "$SNOWSQL_PRIVATE_KEY_PATH"
+
+      - name: Apply schema changes
+        run: |
+          chmod +x ./scripts/apply_changes.sh
+          ./scripts/apply_changes.sh "$SNOWSQL_ACCOUNT" "$SNOWSQL_USER" "$SNOWSQL_ROLE" "$SNOWSQL_WAREHOUSE" "$CLONED_DB" "$SNOWSQL_PRIVATE_KEY_PATH"
+        continue-on-error: true
+
+      - name: Rollback if schema changes failed
+        if: failure()
+        run: |
+          chmod +x ./scripts/rollback.sh
+          ./scripts/rollback.sh
+
+      - name: Cleanup cloned database on success
+        if: success()
+        run: |
+          chmod +x ./scripts/cleanup.sh
+          ./scripts/cleanup.sh "$SNOWSQL_ACCOUNT" "$SNOWSQL_USER" "$SNOWSQL_ROLE" "$SNOWSQL_WAREHOUSE" "$CLONED_DB" "$SNOWSQL_PRIVATE_KEY_PATH"
