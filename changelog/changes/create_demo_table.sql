@@ -1,6 +1,6 @@
 --liquibase formatted sql
 
--- Changeset id:2 author:dev
+-- Changeset id:3 author:dev
 CREATE TABLE DEMO_TABLE (
     DEMO_ID NUMBER,
     DESCRIPTION VARCHAR(255) NOT NULL,
