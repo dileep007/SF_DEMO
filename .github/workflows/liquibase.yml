@@ -41,7 +41,7 @@ jobs:
       
 
     - name: Run Liquibase Status
-      run: ./liquibase status -
+      run: ./liquibase status
 
     - name: Validate Liquibase Changelog
       run: ./liquibase validate
