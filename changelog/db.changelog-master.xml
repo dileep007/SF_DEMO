@@ -7,4 +7,5 @@
    
     <include file="changes/db.changelog-1.0.xml" relativeToChangelogFile="true"/>
     <include file="changes/create_demo_table.sql" relativeToChangelogFile="true"/>
+    <include file="changes/create_test_table.sql" relativeToChangelogFile="true"/>
 </databaseChangeLog>
