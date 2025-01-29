@@ -8,7 +8,10 @@ on:
         required: false
         default: "1"
       changeset_id:
-        description: "Changeset ID to rollback"
+        description: "Changeset ID to rollback "
+        required: false
+      changeset_author:
+        description: "Author of the changeset"
         required: false
 
 jobs:
@@ -50,14 +53,15 @@ jobs:
 
     - name: Rollback Changes
       run: |
-        if [ -n "${{ github.event.inputs.changeset_id }}" ]; then
-          echo "Rolling back specific changeset ID: ${{ github.event.inputs.changeset_id }}"
-          ./liquibase rollbackOneChangeSet \
-            --changeSetId=${{ github.event.inputs.changeset_id }} \
-            --changeLogFile=changelog/db.changelog-master.xml
+        if [ -n "${{ github.event.inputs.changeset_id }}" ] && [ -n "${{ github.event.inputs.changeset_author }}" ]; then
+          echo "Rolling back specific changeset ID: ${{ github.event.inputs.changeset_id }} by author: ${{ github.event.inputs.changeset_author }}"
+          ./liquibase rollback-one-changeset \
+            --changelog-file=changelog/db.changelog-master.xml \
+            --changeset-id=${{ github.event.inputs.changeset_id }} \
+            --changeset-author=${{ github.event.inputs.changeset_author }} \
+            --changeset-path=changelog/db.changelog-master.xml \
+            --force
         else
           echo "Rolling back last ${{ github.event.inputs.rollback_count }} changes..."
           ./liquibase rollbackCount ${{ github.event.inputs.rollback_count }}
         fi
-
-
