@@ -1,10 +1,11 @@
---liquibase formatted sql
-
--- Changeset id:3 author:dev
-CREATE TABLE TEST_TABLE (
-    DEMO_ID NUMBER,
-    DESCRIPTION VARCHAR(255) NOT NULL,
-    CREATED_AT TIMESTAMP NOT NULL
+-- changeset your_name:10
+CREATE TABLE first_table (
+    id INT PRIMARY KEY,
+    name VARCHAR(255)
 );
 
---rollback DROP TABLE DEMO_TABLE;
+-- changeset your_name:11
+CREATE TABLE second_table (
+    id INT PRIMARY KEY,
+    description VARCHAR(255)
+);
