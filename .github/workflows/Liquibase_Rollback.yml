@@ -8,7 +8,7 @@ on:
         required: false
         default: "1"
       changeset_id:
-        description: "Changeset ID to rollback (if specified, it takes priority over rollback_count)"
+        description: "Changeset ID to rollback:"
         required: false
 
 jobs:
@@ -52,7 +52,8 @@ jobs:
       run: |
         if [ -n "${{ github.event.inputs.changeset_id }}" ]; then
           echo "Rolling back specific changeset ID: ${{ github.event.inputs.changeset_id }}"
-          ./liquibase rollbackOneChangeSet --changeSetId=${{ github.event.inputs.changeset_id }} --author=your_name
+          ./liquibase rollbackOneChangeSet --changeSetId=${{ github.event.inputs.changeset_id }}
+          
         else
           echo "Rolling back last ${{ github.event.inputs.rollback_count }} changes..."
           ./liquibase rollbackCount ${{ github.event.inputs.rollback_count }}
