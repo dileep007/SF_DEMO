@@ -1,3 +1,4 @@
+
 name: Liquibase Rollback
 
 on:
@@ -7,12 +8,6 @@ on:
         description: "Number of changes to rollback"
         required: false
         default: "1"
-      changeset_id:
-        description: "Changeset ID to rollback "
-        required: false
-      changeset_author:
-        description: "Author of the changeset"
-        required: false
 
 jobs:
   database-rollback:
@@ -45,6 +40,8 @@ jobs:
         changeLogFile: changelog/db.changelog-master.xml
         EOF
 
+        
+
     - name: Run Liquibase Status
       run: ./liquibase status
 
@@ -53,15 +50,6 @@ jobs:
 
     - name: Rollback Changes
       run: |
-        if [ -n "${{ github.event.inputs.changeset_id }}" ] && [ -n "${{ github.event.inputs.changeset_author }}" ]; then
-          echo "Rolling back specific changeset ID: ${{ github.event.inputs.changeset_id }} by author: ${{ github.event.inputs.changeset_author }}"
-          ./liquibase rollback-one-changeset \
-            --changelog-file=changelog/db.changelog-master.xml \
-            --changeset-id=${{ github.event.inputs.changeset_id }} \
-            --changeset-author=${{ github.event.inputs.changeset_author }} \
-            --changeset-path=changelog/db.changelog-master.xml \
-            --force
-        else
-          echo "Rolling back last ${{ github.event.inputs.rollback_count }} changes..."
-          ./liquibase rollbackCount ${{ github.event.inputs.rollback_count }}
-        fi
+        ROLLBACK_COUNT="${{ github.event.inputs.rollback_count }}"
+        echo "Rolling back last $ROLLBACK_COUNT changes..."
+        ./liquibase rollbackCount $ROLLBACK_COUNT
