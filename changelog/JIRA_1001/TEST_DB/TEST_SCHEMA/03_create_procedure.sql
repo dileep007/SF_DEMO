@@ -9,5 +9,5 @@ $$
     SELECT STOCK_NAME, STOCK_PRICE FROM STOCKS;
 $$;
 
---rollback drop procedure GET_STOCKS();
+
 
