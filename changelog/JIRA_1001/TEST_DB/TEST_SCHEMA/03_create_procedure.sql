@@ -1,1 +1,13 @@
+--liquibase formatted sql
+
+-- changeset create_procedure:103
+CREATE OR REPLACE PROCEDURE GET_STOCKS()
+RETURNS TABLE (STOCK_NAME STRING, STOCK_PRICE DECIMAL(10,2))
+LANGUAGE SQL 
+AS 
+$$
+    SELECT STOCK_NAME, STOCK_PRICE FROM STOCKS;
+$$;
+
+--rollback drop procedure GET_STOCKS();
 
